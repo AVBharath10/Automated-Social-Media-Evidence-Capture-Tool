@@ -8,23 +8,18 @@ import time
 import os
 from fpdf import FPDF
 from PIL import Image
-
 if len(sys.argv) < 3:
     print("Usage: python insta_viewer.py <username> <password>")
     sys.exit(1)
-
 INSTAGRAM_USERNAME = sys.argv[1]
 INSTAGRAM_PASSWORD = sys.argv[2]
-
 output_dir = "output"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
 driver = webdriver.Chrome()
 driver.get("https://www.instagram.com/")
-
 wait = WebDriverWait(driver, 15)
-
 username_input = wait.until(EC.presence_of_element_located((By.NAME, "username")))
 password_input = wait.until(EC.presence_of_element_located((By.NAME, "password")))
 username_input.send_keys(INSTAGRAM_USERNAME)
@@ -37,7 +32,6 @@ try:
 except Exception as e:
     print("Login may have failed or took too long:", e)
 
-# Skip popups
 for _ in range(2):
     try:
         not_now = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Not Now')]")))
@@ -85,10 +79,7 @@ try:
     time.sleep(2)
 except Exception as e:
     print("Following section failed.", e)
-
-driver.quit()
-
-# Generate PDF
+driver.quit() 
 pdf = FPDF()
 for img_file in sorted(os.listdir(output_dir)):
     if img_file.endswith(".png"):

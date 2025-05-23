@@ -12,3 +12,4 @@ def download_report():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)  # different port to avoid conflicts
+  

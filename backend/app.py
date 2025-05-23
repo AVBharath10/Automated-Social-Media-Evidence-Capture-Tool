@@ -8,20 +8,28 @@ app = Flask(__name__)
 CORS(app)
 
 OUTPUT_FOLDER = "output"
+PLATFORM_SCRIPTS = {
+    "instagram": "insta_viewer.py",
+    "twitter": "twitter_viewer.py"
+}
 
 @app.route("/generate-report", methods=["POST"])
 def generate_report():
     data = request.get_json()
+    platform = data.get("platform")  # "instagram" or "twitter"
     username = data.get("username")
     password = data.get("password")
 
+    if platform not in PLATFORM_SCRIPTS:
+        return jsonify({"error": "Unsupported platform"}), 400
     if not username or not password:
         return jsonify({"error": "Username and password required"}), 400
 
+    script = PLATFORM_SCRIPTS[platform]
+
     try:
-        # Use sys.executable to call the right python interpreter
         result = subprocess.run(
-            [sys.executable, "insta_viewer.py", username, password],
+            [sys.executable, script, username, password],
             capture_output=True,
             text=True,
             cwd=os.path.dirname(os.path.abspath(__file__)),
@@ -30,9 +38,11 @@ def generate_report():
         if result.returncode != 0:
             return jsonify({"error": result.stderr.strip()}), 500
 
-        pdf_path = os.path.join(OUTPUT_FOLDER, "Instagram_Report.pdf")
+        pdf_name = f"{platform.capitalize()}_Report.pdf"
+        pdf_path = os.path.join(OUTPUT_FOLDER, pdf_name)
+
         if os.path.exists(pdf_path):
-            return jsonify({"pdf_url": f"http://localhost:5000/output/Instagram_Report.pdf"}), 200
+            return jsonify({"pdf_url": f"http://localhost:5000/output/{pdf_name}"}), 200
         else:
             return jsonify({"error": "PDF not generated"}), 500
 
