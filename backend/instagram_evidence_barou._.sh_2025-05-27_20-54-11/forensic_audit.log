@@ -1,0 +1,10 @@
+{"timestamp": "2025-05-27T20:54:13.623600", "action": "Initialize WebDriver", "status": "SUCCESS", "error": null}
+{"timestamp": "2025-05-27T20:54:35.645825", "action": "Login attempt", "status": "SUCCESS", "error": null}
+{"timestamp": "2025-05-27T20:54:51.941855", "action": "Dismissed 'Save Login' prompt", "status": "SUCCESS", "error": null}
+{"timestamp": "2025-05-27T20:54:53.953223", "action": "Login verification", "status": "SUCCESS", "error": null}
+{"timestamp": "2025-05-27T20:54:59.492149", "action": "Profile page loaded", "status": "SUCCESS", "error": null}
+{"timestamp": "2025-05-27T20:54:59.699123", "action": "Captured profile_header", "status": "SUCCESS", "error": null}
+{"timestamp": "2025-05-27T20:55:20.178639", "action": "Capture posts", "status": "FAILED", "error": "Message: \nStacktrace:\n\tGetHandleVerifier [0x00007FF69718CF65+75717]\n\tGetHandleVerifier [0x00007FF69718CFC0+75808]\n\t(No symbol) [0x00007FF696F58F9A]\n\t(No symbol) [0x00007FF696FAF4C6]\n\t(No symbol) [0x00007FF696FAF77C]\n\t(No symbol) [0x00007FF697002577]\n\t(No symbol) [0x00007FF696FD73BF]\n\t(No symbol) [0x00007FF696FFF39C]\n\t(No symbol) [0x00007FF696FD7153]\n\t(No symbol) [0x00007FF696FA0421]\n\t(No symbol) [0x00007FF696FA11B3]\n\tGetHandleVerifier [0x00007FF69748D74D+3223469]\n\tGetHandleVerifier [0x00007FF697"}
+{"timestamp": "2025-05-27T20:55:22.725439", "action": "Captured followers", "status": "SUCCESS", "error": null}
+{"timestamp": "2025-05-27T20:55:26.165008", "action": "Captured following", "status": "SUCCESS", "error": null}
+{"timestamp": "2025-05-27T20:55:29.819318", "action": "Browser closed", "status": "SUCCESS", "error": null}
