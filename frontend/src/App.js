@@ -35,16 +35,19 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Social Media Report Generator</h1>
-      <form onSubmit={handleSubmit}>
-        <select
-          value={platform}
-          onChange={(e) => setPlatform(e.target.value)}
-          required
-        >
-          <option value="instagram">Instagram</option>
-          <option value="twitter">Twitter</option>
-        </select>
+      <h1>📊 Social Media Report</h1>
+      <form onSubmit={handleSubmit} className="form-container">
+        <label>
+          Platform:
+          <select
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            required
+          >
+            <option value="instagram">Instagram</option>
+            <option value="twitter">Twitter</option>
+          </select>
+        </label>
 
         <input
           type="text"
@@ -62,10 +65,12 @@ function App() {
         />
         <button type="submit">Generate Report</button>
       </form>
-      <p>{status}</p>
+
+      <p className="status-message">{status}</p>
+
       {pdfUrl && (
         <a href={pdfUrl} target="_blank" rel="noopener noreferrer" download>
-          <button>⬇ Download PDF Report</button>
+          <button className="download-btn">⬇ Download PDF</button>
         </a>
       )}
     </div>
