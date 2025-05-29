@@ -36,7 +36,6 @@ try:
 except Exception as e:
     print("Login may have failed or took too long:", e)
 
-# Handle pop-ups
 for _ in range(2):
     try:
         not_now = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Not Now')]")))
@@ -45,7 +44,6 @@ for _ in range(2):
     except:
         pass
 
-# Visit user profile
 driver.get(f"https://www.instagram.com/{INSTAGRAM_USERNAME}/")
 try:
     wait.until(EC.presence_of_element_located((By.TAG_NAME, "header")))
@@ -55,14 +53,12 @@ except Exception as e:
 
 time.sleep(3)
 
-# Profile screenshot
 profile_path = os.path.join(output_dir, "profile.png")
 driver.save_screenshot(profile_path)
 print(f"Profile screenshot saved to {profile_path}")
 
 def close_dialog():
     try:
-        # Try different ways to close the dialog
         close_buttons = driver.find_elements(By.XPATH, "//div[@role='dialog']//*[contains(@aria-label, 'Close') or contains(text(), 'Close')]")
         for btn in close_buttons:
             try:
@@ -71,7 +67,6 @@ def close_dialog():
                 return True
             except:
                 continue
-        # If above fails, try pressing ESC
         body = driver.find_element(By.TAG_NAME, 'body')
         body.send_keys(Keys.ESCAPE)
         time.sleep(1)
@@ -79,7 +74,6 @@ def close_dialog():
     except:
         return False
 
-# Followers screenshot
 try:
     followers_link = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(@href, 'followers')]")))
     followers_link.click()
@@ -88,14 +82,12 @@ try:
     driver.save_screenshot(followers_path)
     print(f"Followers screenshot saved to {followers_path}")
     
-    # Ensure dialog is closed
     if not close_dialog():
         print("Warning: Could not close followers dialog properly")
     time.sleep(2)
 except Exception as e:
     print("Followers section failed.", e)
 
-# Following screenshot
 try:
     following_link = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(@href, 'following')]")))
     following_link.click()
@@ -104,17 +96,14 @@ try:
     driver.save_screenshot(following_path)
     print(f"Following screenshot saved to {following_path}")
     
-    # Ensure dialog is closed
     if not close_dialog():
         print("Warning: Could not close following dialog properly")
     time.sleep(2)
 except Exception as e:
     print("Following section failed.", e)
 
-# Scroll to load posts and take screenshots
 try:
     print("Capturing posts...")
-    # First make sure we're back at the top of the profile page
     driver.get(f"https://www.instagram.com/{INSTAGRAM_USERNAME}/")
     time.sleep(3)
     
@@ -128,8 +117,6 @@ except Exception as e:
     print("Post section failed.", e)
 
 driver.quit()
-
-# Generate PDF
 pdf = FPDF()
 for img_file in sorted(os.listdir(output_dir)):
     if img_file.endswith(".png"):

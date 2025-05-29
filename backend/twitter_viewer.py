@@ -1,242 +1,132 @@
+import sys
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
-from fpdf import FPDF
-import matplotlib.pyplot as plt
-import textwrap
 import time
 import os
-import random
+from fpdf import FPDF
+from PIL import Image
 
-class TwitterAnalyticsPDF(FPDF):
-    def add_engagement_chart(self, data):
-        plt.figure(figsize=(6, 2))
-        months = [d['month'] for d in data]
-        tweets = [d['tweets'] for d in data]
-        plt.bar(months, tweets, color='#1DA1F2')
-        plt.title('Monthly Tweet Activity')
-        chart_path = "engagement_chart.png"
-        plt.savefig(chart_path, bbox_inches='tight')
-        plt.close()
-        self.image(chart_path, x=10, y=self.get_y(), w=180)
-        self.ln(40)
-        if os.path.exists(chart_path):
-            os.remove(chart_path)
+if len(sys.argv) < 3:
+    print("Usage: python twitter_viewer.py <username> <password>")
+    sys.exit(1)
 
-def human_like_delay():
-    """Add random delay between actions to appear more human-like"""
-    time.sleep(random.uniform(0.5, 2.5))
+TWITTER_USERNAME = sys.argv[1]
+TWITTER_PASSWORD = sys.argv[2]
 
-def login_to_twitter(driver, username, password):
+output_dir = "twitter_output"
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+driver = webdriver.Chrome()
+driver.get("https://twitter.com/i/flow/login")
+wait = WebDriverWait(driver, 15)
+
+try:
+    # Twitter login flow can be more complex
+    username_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@autocomplete='username']")))
+    username_input.send_keys(TWITTER_USERNAME)
+    username_input.send_keys(Keys.RETURN)
+    time.sleep(2)
+    
+    # Sometimes Twitter asks for unusual things
     try:
-        driver.get("https://twitter.com/i/flow/login")
-        wait = WebDriverWait(driver, 20)
-        
-        # Handle username input
-        username_field = wait.until(EC.presence_of_element_located(
-            (By.XPATH, "//input[@autocomplete='username']")
-        ))
-        human_like_delay()
-        username_field.send_keys(username)
-        human_like_delay()
-        username_field.send_keys(Keys.RETURN)
-        
-        # Sometimes Twitter asks for additional verification
-        try:
-            verification_field = WebDriverWait(driver, 3).until(
-                EC.presence_of_element_located((By.XPATH, "//input[@name='text']"))
-            )
-            human_like_delay()
-            verification_field.send_keys(username)
-            human_like_delay()
-            verification_field.send_keys(Keys.RETURN)
-        except:
-            pass
-        
-        # Handle password input
-        password_field = wait.until(EC.presence_of_element_located(
-            (By.XPATH, "//input[@autocomplete='current-password']")
-        ))
-        human_like_delay()
-        password_field.send_keys(password)
-        human_like_delay()
-        password_field.send_keys(Keys.RETURN)
-        
-        # Wait for login to complete
-        wait.until(EC.presence_of_element_located(
-            (By.XPATH, f"//a[@href='/{username}']")
-        ))
+        # Handle case where Twitter asks "Is this you?"
+        confirm_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@role='button' and contains(., 'This is me')]")))
+        confirm_button.click()
+        time.sleep(2)
+    except:
+        pass
+    
+    password_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@autocomplete='current-password']")))
+    password_input.send_keys(TWITTER_PASSWORD)
+    password_input.send_keys(Keys.RETURN)
+    
+    # Wait for home timeline to load
+    wait.until(EC.presence_of_element_located((By.XPATH, "//a[@href='/home']")))
+    print("Login successful!")
+except Exception as e:
+    print("Login failed:", e)
+    driver.quit()
+    sys.exit(1)
+
+# Go to profile
+driver.get(f"https://twitter.com/{TWITTER_USERNAME}")
+time.sleep(3)
+
+profile_path = os.path.join(output_dir, "profile.png")
+driver.save_screenshot(profile_path)
+print(f"Profile screenshot saved to {profile_path}")
+
+def close_dialog():
+    try:
+        body = driver.find_element(By.TAG_NAME, 'body')
+        body.send_keys(Keys.ESCAPE)
+        time.sleep(1)
         return True
-        
-    except Exception as e:
-        print(f"Login failed: {str(e)}")
+    except:
         return False
 
-def scrape_profile_data(driver, username):
-    try:
-        wait = WebDriverWait(driver, 20)
-        driver.get(f"https://twitter.com/{username}")
-        
-        # Wait for profile to load
-        wait.until(EC.presence_of_element_located(
-            (By.XPATH, "//div[@data-testid='UserProfileHeader_Items']")
-        ))
-        human_like_delay()
-        
-        # Take screenshot
-        screenshot_path = "profile_screenshot.png"
-        driver.save_screenshot(screenshot_path)
-        
-        # Get follower/following counts
-        followers = wait.until(EC.presence_of_element_located(
-            (By.XPATH, "//a[contains(@href,'/followers')]//span[1]")
-        )).text
-        following = wait.until(EC.presence_of_element_located(
-            (By.XPATH, "//a[contains(@href,'/following')]//span[1]")
-        )).text
-        
-        # Mock some tweet data (since scraping actual tweets is unreliable)
-        tweets = [{
-            'date': '2023-11-15',
-            'text': 'Just launched my new project! Check it out at example.com #coding #python',
-            'likes': random.randint(100, 1500),
-            'retweets': random.randint(50, 500),
-            'replies': random.randint(10, 100),
-            'screenshot': screenshot_path
-        }]
-        
-        profile_data = {
-            'username': username,
-            'followers': followers,
-            'following': following,
-            'engagement_rate': f"{random.uniform(2.5, 8.0):.1f}%",
-            'top_tweet': 'Python automation guide (1.2K likes)'
-        }
-        
-        return profile_data, tweets
-        
-    except Exception as e:
-        print(f"Scraping failed: {str(e)}")
-        return None, []
+# Capture followers
+try:
+    followers_link = wait.until(EC.element_to_be_clickable((By.XPATH, f"//a[@href='/{TWITTER_USERNAME}/followers']")))
+    followers_link.click()
+    time.sleep(3)
+    followers_path = os.path.join(output_dir, "followers.png")
+    driver.save_screenshot(followers_path)
+    print(f"Followers screenshot saved to {followers_path}")
+    
+    if not close_dialog():
+        print("Warning: Could not close followers dialog properly")
+    time.sleep(2)
+except Exception as e:
+    print("Followers section failed.", e)
 
-def generate_advanced_report(profile_data, tweets):
-    pdf = TwitterAnalyticsPDF()
-    pdf.add_page()
+# Capture following
+try:
+    following_link = wait.until(EC.element_to_be_clickable((By.XPATH, f"//a[@href='/{TWITTER_USERNAME}/following']")))
+    following_link.click()
+    time.sleep(3)
+    following_path = os.path.join(output_dir, "following.png")
+    driver.save_screenshot(following_path)
+    print(f"Following screenshot saved to {following_path}")
     
-    # Header
-    pdf.set_font("Arial", "B", 24)
-    pdf.set_text_color(29, 161, 242)  # Twitter blue
-    pdf.cell(0, 10, f"Twitter Analytics Report: @{profile_data['username']}", ln=1)
-    pdf.ln(10)
-    
-    # Profile Overview
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, "📊 Profile Overview", ln=1)
-    pdf.set_font("Arial", "", 12)
-    
-    overview = [
-        f"Followers: {profile_data['followers']}",
-        f"Following: {profile_data['following']}",
-        f"Engagement Rate: {profile_data['engagement_rate']}",
-        f"Top Tweet: {profile_data['top_tweet']}"
-    ]
-    
-    for item in overview:
-        pdf.cell(0, 7, item, ln=1)
-    
-    pdf.ln(10)
-    
-    # Top Tweets
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, "🏆 Top Performing Tweets", ln=1)
-    
-    for i, tweet in enumerate(tweets[:3], 1):
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 7, f"{i}. {tweet['date']} - {textwrap.shorten(tweet['text'], width=50)}", ln=1)
-        pdf.set_font("Arial", "", 10)
-        pdf.cell(0, 5, f"▲{tweet.get('likes', 0)} Likes | 🔄{tweet.get('retweets', 0)} Retweets | 💬{tweet.get('replies', 0)} Replies", ln=1)
-        
-        if 'screenshot' in tweet and os.path.exists(tweet['screenshot']):
-            pdf.image(tweet['screenshot'], x=10, y=pdf.get_y(), w=180)
-            pdf.ln(90)
-            # Remove the screenshot after adding to PDF
-            os.remove(tweet['screenshot'])
-    
-    # Engagement Chart
-    monthly_data = [
-        {'month': 'Jan', 'tweets': random.randint(3, 10)},
-        {'month': 'Feb', 'tweets': random.randint(3, 10)},
-        {'month': 'Mar', 'tweets': random.randint(3, 10)},
-        {'month': 'Apr', 'tweets': random.randint(3, 10)},
-        {'month': 'May', 'tweets': random.randint(3, 10)},
-    ]
-    pdf.add_engagement_chart(monthly_data)
-    
-    # Recommendations
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, "🔍 Recommendations", ln=1)
-    pdf.set_font("Arial", "", 12)
-    
-    recommendations = [
-        "1. Post more coding content (your Python tweets get 3× engagement)",
-        "2. Best posting times: Wed 10AM, Fri 3PM (based on your audience)",
-        "3. Try tweet threads - your tutorials perform well!",
-        "4. Engage with 5-10 relevant accounts daily to grow your network",
-        "5. Use 1-2 hashtags per tweet for better discoverability"
-    ]
-    
-    for rec in recommendations:
-        pdf.multi_cell(0, 7, rec)
-        pdf.ln(2)
-    
-    # Save the PDF
-    output_path = f"Twitter_Report_{profile_data['username']}.pdf"
-    pdf.output(output_path)
-    return output_path
+    if not close_dialog():
+        print("Warning: Could not close following dialog properly")
+    time.sleep(2)
+except Exception as e:
+    print("Following section failed.", e)
 
-def main():
-    # Configure Chrome options
-    chrome_options = Options()
-    chrome_options.add_argument("--window-size=1400,900")
+# Capture tweets
+try:
+    print("Capturing tweets...")
+    driver.get(f"https://twitter.com/{TWITTER_USERNAME}")
+    time.sleep(3)
     
-    # Uncomment for headless mode (no browser window)
-    # chrome_options.add_argument("--headless=new")
-    
-    # Additional options to help with automation detection
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option("useAutomationExtension", False)
-    
-    # Initialize driver
-    driver = webdriver.Chrome(options=chrome_options)
-    
-    try:
-        # Get credentials (in a real app, use environment variables)
-        username = input("Enter your Twitter username: ")
-        password = input("Enter your Twitter password: ")
-        
-        # Login
-        if not login_to_twitter(driver, username, password):
-            print("❌ Failed to login to Twitter")
-            return
-        
-        # Scrape data
-        profile_data, tweets = scrape_profile_data(driver, username)
-        if not profile_data:
-            print("❌ Failed to scrape profile data")
-            return
-        
-        # Generate report
-        report_path = generate_advanced_report(profile_data, tweets)
-        print(f"✅ Report successfully generated: {report_path}")
-        
-    finally:
-        driver.quit()
+    for i in range(3):  # Scroll 3 times
+        driver.execute_script("window.scrollBy(0, window.innerHeight);")
+        time.sleep(3)
+        tweet_path = os.path.join(output_dir, f"tweets_scroll_{i+1}.png")
+        driver.save_screenshot(tweet_path)
+        print(f"Tweet screenshot saved to {tweet_path}")
+except Exception as e:
+    print("Tweet section failed.", e)
 
-if __name__ == "__main__":
-    main()
+driver.quit()
+
+# Generate PDF
+pdf = FPDF()
+for img_file in sorted(os.listdir(output_dir)):
+    if img_file.endswith(".png"):
+        image_path = os.path.join(output_dir, img_file)
+        cover = Image.open(image_path)
+        width, height = cover.size
+        width, height = float(width * 0.264583), float(height * 0.264583)  # px to mm
+        pdf.add_page()
+        pdf.image(image_path, 0, 0, width, height)
+
+pdf_path = os.path.join(output_dir, "Twitter_Report.pdf")
+pdf.output(pdf_path, "F")
+print(f"Report generated: {pdf_path}")
