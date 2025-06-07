@@ -25,15 +25,12 @@ driver.get("https://twitter.com/i/flow/login")
 wait = WebDriverWait(driver, 15)
 
 try:
-    # Twitter login flow can be more complex
     username_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@autocomplete='username']")))
     username_input.send_keys(TWITTER_USERNAME)
     username_input.send_keys(Keys.RETURN)
     time.sleep(2)
     
-    # Sometimes Twitter asks for unusual things
     try:
-        # Handle case where Twitter asks "Is this you?"
         confirm_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@role='button' and contains(., 'This is me')]")))
         confirm_button.click()
         time.sleep(2)
@@ -44,7 +41,6 @@ try:
     password_input.send_keys(TWITTER_PASSWORD)
     password_input.send_keys(Keys.RETURN)
     
-    # Wait for home timeline to load
     wait.until(EC.presence_of_element_located((By.XPATH, "//a[@href='/home']")))
     print("Login successful!")
 except Exception as e:
@@ -52,7 +48,6 @@ except Exception as e:
     driver.quit()
     sys.exit(1)
 
-# Go to profile
 driver.get(f"https://twitter.com/{TWITTER_USERNAME}")
 time.sleep(3)
 
@@ -69,7 +64,6 @@ def close_dialog():
     except:
         return False
 
-# Capture followers
 try:
     followers_link = wait.until(EC.element_to_be_clickable((By.XPATH, f"//a[@href='/{TWITTER_USERNAME}/followers']")))
     followers_link.click()
@@ -84,7 +78,6 @@ try:
 except Exception as e:
     print("Followers section failed.", e)
 
-# Capture following
 try:
     following_link = wait.until(EC.element_to_be_clickable((By.XPATH, f"//a[@href='/{TWITTER_USERNAME}/following']")))
     following_link.click()
@@ -105,7 +98,7 @@ try:
     driver.get(f"https://twitter.com/{TWITTER_USERNAME}")
     time.sleep(3)
     
-    for i in range(3):  # Scroll 3 times
+    for i in range(3):  
         driver.execute_script("window.scrollBy(0, window.innerHeight);")
         time.sleep(3)
         tweet_path = os.path.join(output_dir, f"tweets_scroll_{i+1}.png")
